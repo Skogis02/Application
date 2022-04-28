@@ -8,9 +8,10 @@ PI = np.pi
 
 class FunctionPlotter:
     def __init__(self, function: Callable, lower_bound: float = -2, upper_bound: float = 2,
-                 number_of_points: int = 100, width: float = 12, height: float = 9,
+                 number_of_points: int = 100, width: float = 15, height: float = 9,
                  name: str = "My Plot", read_from: str = 'data_in.csv', write_to: str = 'data_out.csv'):
 
+        # Plotting
         self.function = function
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
@@ -24,12 +25,22 @@ class FunctionPlotter:
         self.ydata = None
         self.fig = None
 
+        # Fast Fourier Transform
+
+        self.x_width = self.upper_bound - self.lower_bound
+        self.sample_frequency = self.number_of_points/self.x_width
+        self.sample_period = 1/self.sample_frequency
+        self.fft_frequencies = None
+        self.fft_amplitudes = None
+
+
     # Hidden Methods:
     def __generate_figure(self):
         if self.fig is None:
             # Layout and Design
             self.fig = plt.figure(num=0, figsize=(self.width, self.height))
-            self.ax_graph = plt.subplot2grid(shape=(1, 5), loc=(0, 0), rowspan=5, colspan=3)
+            self.ax_graph = plt.subplot2grid(shape=(5, 5), loc=(0, 0), rowspan=3, colspan=3)
+            self.ax_fft = plt.subplot2grid(shape=(5, 5), loc=(3, 0), rowspan=2, colspan=3)
             self.ax_name = plt.subplot2grid(shape=(10, 15), loc=(2, 10), rowspan=1, colspan=3)
             self.ax_lower_bound = plt.subplot2grid(shape=(10, 15), loc=(0, 10), rowspan=1, colspan=3)
             self.ax_upper_bound = plt.subplot2grid(shape=(10, 15), loc=(1, 10), rowspan=1, colspan=3)
@@ -38,6 +49,9 @@ class FunctionPlotter:
             self.ax_read_button = plt.subplot2grid(shape=(10, 15), loc=(3, 13), rowspan=1, colspan=3)
             self.ax_write_button = plt.subplot2grid(shape=(10, 15), loc=(4, 13), rowspan=1, colspan=3)
 
+            self.ax_graph.set_title('Plotter')
+            self.ax_fft.set_title('Frequency Domain')
+            self.ax_fft.grid()
             self.ax_graph.grid()
             plt.tight_layout()
 
@@ -75,6 +89,26 @@ class FunctionPlotter:
         if self.ydata is None:
             self.__generate_ydata()
         return self.ydata
+
+    def __generate_fft_frequencies(self):
+        fft_frequencies = np.fft.fftfreq(self.number_of_points, d=self.sample_period)
+        self.fft_frequencies = np.split(fft_frequencies, 2)[0]   # keeps only positive frequency data
+
+    def __get_fft_frequencies(self) -> np.ndarray:
+        if self.fft_frequencies is None:
+            self.__generate_fft_frequencies()
+        return self.fft_frequencies
+
+    def __generate_fft_amplitudes(self):
+        fft_result_complex = np.fft.fft(self.__get_ydata())     # runs Fast Fourier Transform on current ydata
+        fft_result_magnitudes = np.abs(fft_result_complex)/self.number_of_points    # gets magnitudes and normalizes
+        self.fft_amplitudes = np.split(fft_result_magnitudes, 2)[0]     # keeps only positive frequency data
+
+    def __get_fft_amplitudes(self) -> np.ndarray:
+
+        if self.fft_amplitudes is None:
+            self.__generate_fft_amplitudes()
+        return self.fft_amplitudes
 
     # Data Methods:
     def update_data(self):
@@ -117,11 +151,14 @@ class FunctionPlotter:
     def create_plot(self):
         self.__generate_figure()
         self.ax_graph.plot(self.__get_xdata(), self.__get_ydata())
+        self.ax_fft.plot(self.__get_fft_frequencies(), self.__get_fft_amplitudes())
 
     def display(self):
         plt.show()
 
     def update_graph(self):
+        self.ax_fft.clear()
+        self.ax_fft.grid()
         self.ax_graph.clear()
         self.ax_graph.grid()
         self.create_plot()

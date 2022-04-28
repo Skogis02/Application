@@ -12,6 +12,6 @@ def g(x: np.ndarray) -> np.ndarray:
     return 3*PI*np.exp(5*np.sin(2*PI*x))
 
 
-plotter = FunctionPlotter(g, number_of_points=500)
+plotter = FunctionPlotter(g, number_of_points=1000)
 plotter.create_plot()
 plotter.display()
