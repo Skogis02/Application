@@ -102,7 +102,7 @@ class FunctionPlotter:
     def __generate_fft_amplitudes(self):
         fft_result_complex = np.fft.fft(self.__get_ydata())     # runs Fast Fourier Transform on current ydata
         fft_result_magnitudes = np.abs(fft_result_complex)/self.number_of_points    # gets magnitudes and normalizes
-        self.fft_amplitudes = np.split(fft_result_magnitudes, 2)[0]     # keeps only positive frequency data
+        self.fft_amplitudes = 2*np.split(fft_result_magnitudes, 2)[0]     # keeps only positive frequency data
 
     def __get_fft_amplitudes(self) -> np.ndarray:
 
